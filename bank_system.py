@@ -3,7 +3,7 @@ AwesomeGIC Bank - Simple Banking System
 """
 
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, List
 import re
 
@@ -214,6 +214,47 @@ class BankingSystem:
 
         return "\n".join(result)
     
+    def calculate_interest(self, account: str, year_month: str) -> Decimal:
+        """Calculate interest for an account for a specific month"""
+        if account not in self.accounts:
+            return Decimal('0')
+        
+        year = int(year_month[:4])
+        month = int(year_month[4:])
+
+        first_day = datetime(year, month, 1)
+        if month == 12:
+            last_day = datetime(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+
+        total_interest = Decimal('0')
+        current_date = first_day
+        
+        while current_date <= last_day:
+            date_str = current_date.strftime('%Y%m%d')
+
+            eod_balance = self.accounts[account].get_balance_at_date(date_str)
+            
+            if eod_balance > 0:
+                applicable_rate = Decimal('0')
+                for rule in self.interest_rules:
+                    if rule.date <= date_str:
+                        applicable_rate = rule.rate
+                        
+                if applicable_rate > 0:
+                    daily_interest = eod_balance * applicable_rate / Decimal('100') / Decimal('365')
+                    total_interest += daily_interest
+            
+            current_date += timedelta(days=1)
+
+        return total_interest.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+
+        
+        
+        
+
 ####################################### Example usage of class Banking System ####################################
 bank = BankingSystem()
 
@@ -227,18 +268,20 @@ bank = BankingSystem()
 # print(bank.validate_amount(100))
 # print(bank.validate_amount(-67.22))
 # print(bank.validate_amount(67.123))
-
 # print(bank.define_interest_rule("20230101 RULE01 1.95"))
-# bank.input_transaction("20230101 AC001 D 100.00")
-# bank.input_transaction("20230115 AC001 W 50.00")
-# bank.input_transaction("20230120 AC001 D 200.00")
+
+bank.input_transaction("20230101 AC001 D 100.00")
+bank.input_transaction("20230115 AC001 W 50.00")
+bank.input_transaction("20230120 AC001 W 50.00")
 
 # print(bank.get_account_statement("AC001"))
 # print(bank.get_account_statement("AC999"))
 
-# bank.define_interest_rule("20230101 RULE01 1.95")
-# bank.define_interest_rule("20230520 RULE02 1.90")
-# bank.define_interest_rule("20230615 RULE03 2.20")
+bank.define_interest_rule("20230101 RULE01 1.50")
+bank.define_interest_rule("20230615 RULE02 2.00")
+
+interest = bank.calculate_interest("AC001", "202306")
+print(f"Interest earned in June 2023: ${interest:.2f}")
 
 # print(bank.get_interest_rules_display())
 ################################################ end ##################################################
