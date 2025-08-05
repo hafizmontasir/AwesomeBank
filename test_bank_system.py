@@ -207,7 +207,14 @@ class TestBankingSystem(unittest.TestCase):
         self.banking_system.define_interest_rule("20230615 RULE03 2.20")
         
         # Calculate interest for June 2023
-        interest = self.banking_system.calculate_interest("AC001", "202306")    
+        interest = self.banking_system.calculate_interest("AC001", "202306")
+        
+        # Expected calculation:
+        # 20230601-20230614: 150 * 1.90% * 14 / 365 = 1.096
+        # 20230615-20230625: 150 * 2.20% * 11 / 365 = 0.999
+        # 20230626-20230630: 30 * 2.20% * 5 / 365 = 0.091
+        # Total = 2.186, rounded to 2.19
+        
         self.assertAlmostEqual(float(interest), 0.39, places=2)
     
     def test_print_statement(self):
@@ -267,7 +274,84 @@ class TestBankingSystem(unittest.TestCase):
 
 class TestIntegration(unittest.TestCase):
     """Integration Tests"""
-    pass
+    def setUp(self):
+        """Set up intergration test banking system"""
+        self.banking_system = BankingSystem()
+        
+    def test_full_workflow(self):
+        """Test complete banking workflow from requirements"""
+        result1 = self.banking_system.input_transaction("20230505 AC001 D 100.00")
+        self.assertIn("Account: AC001", result1) 
 
+        self.banking_system.input_transaction("20230601 AC001 D 150.00")
+        self.banking_system.input_transaction("20230626 AC001 W 20.00")
+        result4 = self.banking_system.input_transaction("20230626 AC001 W 100.00")
+        
+        self.assertIn("20230505", result4)
+        self.assertIn("20230601", result4)
+        self.assertIn("20230626", result4)
+        
+        # Add interest rules
+        self.banking_system.define_interest_rule("20230101 RULE01 1.95")
+        self.banking_system.define_interest_rule("20230520 RULE02 1.90")
+        result_rules = self.banking_system.define_interest_rule("20230615 RULE03 2.20")
+        
+        # Verify rules are sorted by date
+        lines = result_rules.split('\n')
+        rule_lines = [line for line in lines if 'RULE' in line]
+        self.assertEqual(len(rule_lines), 3)
+        self.assertIn("RULE01", rule_lines[0])
+        self.assertIn("RULE02", rule_lines[1])  
+        self.assertIn("RULE03", rule_lines[2])
+        
+        statement = self.banking_system.print_statement("AC001 202306")
+        
+        # Verify statement contains expected elements
+        self.assertIn("Account: AC001", statement)
+        self.assertIn("20230601", statement)
+        self.assertIn("250.00", statement)  # Balance after June deposit
+        self.assertIn("230.00", statement)  # Balance after first withdrawal
+        self.assertIn("130.00", statement)  # Balance after second withdrawal
+        self.assertIn("20230630", statement)  # Interest date
+        self.assertIn("I", statement)  # Interest transaction type
+        self.assertIn("0.39", statement)
+        self.assertIn("130.39", statement)
+    
+    def test_edge_cases(self):
+        """Test edge cases and boundary conditions"""
+        # Test transaction on leap year
+        self.banking_system.input_transaction("20240229 AC001 D 100.00")
+        self.assertIn("AC001", self.banking_system.accounts)
+        
+        # Test very small amounts
+        self.banking_system.input_transaction("20230626 AC002 D 0.01")
+        self.assertEqual(self.banking_system.accounts["AC002"].balance, Decimal('0.01'))
+        
+        # Test maximum decimal precision
+        self.banking_system.input_transaction("20230626 AC003 D 99.99")
+        self.assertEqual(self.banking_system.accounts["AC003"].balance, Decimal('99.99'))
+        
+        # Test interest calculation with zero balance days
+        self.banking_system.input_transaction("20230601 AC004 D 100.00")
+        self.banking_system.input_transaction("20230602 AC004 W 100.00")
+        self.banking_system.define_interest_rule("20230101 RULE01 2.00")
+        
+        interest = self.banking_system.calculate_interest("AC004", "202306")
+        expected_interest = Decimal('100') * Decimal('2.00') / Decimal('100') / Decimal('365')
+        self.assertAlmostEqual(float(interest), float(expected_interest.quantize(Decimal('0.01'))), places=2)
+        
+        # Test multiple transactions same day
+        self.banking_system.input_transaction("20230626 AC005 D 100.00")
+        self.banking_system.input_transaction("20230626 AC005 D 50.00")
+        self.banking_system.input_transaction("20230626 AC005 W 30.00")
+        
+        self.assertEqual(self.banking_system.accounts["AC005"].balance, Decimal('120.00'))
+        
+        # Verify transaction IDs are unique
+        statement = self.banking_system.get_account_statement("AC005")
+        self.assertIn("20230626-01", statement)
+        self.assertIn("20230626-02", statement)
+        self.assertIn("20230626-03", statement)
+  
 if __name__=='__main__':
     unittest.main(verbosity=2)
