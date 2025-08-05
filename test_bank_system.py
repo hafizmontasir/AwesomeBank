@@ -24,7 +24,14 @@ class TestTransaction(unittest.TestCase):
         txn2 = Transaction("20230626", "AC001", "w", Decimal('100.00'), "20230626-01")
         self.assertEqual(txn2.txn_type, "W")
     
+class TestInterestRule(unittest.TestCase):
+    """Test InterestRule class"""
     
+    def test_interest_rule_creation(self):
+        rule = InterestRule("20230615", "RULE03", Decimal('2.20'))
+        self.assertEqual(rule.date, "20230615")
+        self.assertEqual(rule.rule_id, "RULE03")
+        self.assertEqual(rule.rate, Decimal('2.20'))
 
 
 class TestInterestRule(unittest.TestCase):
