@@ -33,14 +33,65 @@ class TestInterestRule(unittest.TestCase):
         self.assertEqual(rule.rule_id, "RULE03")
         self.assertEqual(rule.rate, Decimal('2.20'))
 
-
-class TestInterestRule(unittest.TestCase):
-    """Test InterestRule class"""
-    pass
-
 class TestAccount(unittest.TestCase):
     """Test Account class"""
-    pass
+    def setUp(self):
+        """setup test account"""
+        self.account = Account("AC001")
+
+    def test_account_creation(self):
+        """Test account object creation"""
+        self.assertEqual(self.account.account_id, "AC001")
+        self.assertEqual(len(self.account.transactions), 0)
+        self.assertEqual(self.account.balance, Decimal('0'))
+        
+    def test_withdrawal_transaction(self):
+        """Test adding withdrawl transaction"""
+        deposit = Transaction("20230626", "AC001", "D", Decimal('100.00'))
+        self.account.add_transaction(deposit)
+        
+        withdrawal = Transaction("20230627", "AC001", "W", Decimal('50.00'))
+        self.account.add_transaction(withdrawal)
+        
+        self.assertEqual(len(self.account.transactions), 2)
+        self.assertEqual(self.account.balance, Decimal('50.00'))
+        
+    def test_insufficient_balance_withdrawal(self):
+        """Test withdrawal with insufficient balance"""
+        withdrawal = Transaction("20230626", "AC001", "W", Decimal('100.00'))
+
+        with self.assertRaise(ValueError):
+            self.account.add_transaction(withdrawal)
+
+    def test_interest_transaction(self):
+        """Test adding interest transaction"""
+        deposit = Transaction("20230626", "AC001", "D", Decimal('100.00'))
+        self.account.add_transaction(deposit)
+        
+        interest = Transaction("20230630", "AC001", "I", Decimal('0.39'))
+        self.account.add_transaction(interest)
+        
+        self.assertEqual(len(self.account.transactions), 2)
+        self.assertEqual(self.account.balance, Decimal('100.39'))
+        
+    def test_get_balance_at_date(self):
+        """Test getting balance at specific date"""
+
+        txn1 = Transaction("20230601", "AC001", "D", Decimal('100.00'))
+        txn2 = Transaction("20230615", "AC001", "D", Decimal('50.00'))
+        txn3 = Transaction("20230620", "AC001", "W", Decimal('30.00'))
+
+        self.account.add_transaction(txn1)
+        self.account.add_transaction(txn2)
+        self.account.add_transaction(txn3)
+
+        self.assertEqual(self.account.get_balance_at_date('20230531'), Decimal('0'))
+        self.assertEqual(self.account.get_balance_at_date('20230601'), Decimal('100.00'))
+        self.assertEqual(self.account.get_balance_at_date('20230615'), Decimal('150.00'))
+        self.assertEqual(self.account.get_balance_at_date('20230620'), Decimal('120.00'))
+
+
+
 
 class TestBankingSystem(unittest.TestCase):
     """Test BankingSystem class"""
