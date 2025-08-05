@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 AwesomeGIC Bank - Simple Banking System
 """
@@ -311,7 +312,62 @@ class BankingSystem:
         
         return "\n".join(result)
                     
-                    
+def main():
+    """Main application loop"""
+    banking_system = BankingSystem()
+
+    print("Welcome to AwesomeGIC Bank! What would you like to do?")
+
+    while True:
+        print("[T] Input transactions")
+        print("[I] Define interest rules")
+        print("[P] Print statement")
+        print("[Q] Quit")
+        
+        choice = input("> ").strip().upper()
+
+        if choice == 'T':
+            print("Please enter transaction details in <Date> <Account> <Type> <Amount> format")
+            print("(or enter blank to go back to main menu):")
+            transaction_input = input("> ").strip()
+            if not transaction_input:
+                continue
+            result = banking_system.input_transaction(transaction_input)
+            print(result)
+            print("\nIs there anything else you'd like to do?")
+            
+        elif choice == "I":
+            print("Please enter interest rules details in <Date> <RuleId> <Rate in %> format")
+            print("(or enter blank to go back to main menu):")
+            rule_input = input("> ").strip()
+            if not rule_input:
+                continue
+            result = banking_system.define_interest_rule(rule_input)
+            print(result)
+            print("\nIs there anything else you'd like to do?")
+
+        elif choice == 'P':
+            print("Please enter account details in <Account> <Year><Month> format")
+            print("(or enter blank to go back to main menu):")
+            statement_input = input("> ").strip()
+            if not statement_input:
+                continue
+            result = banking_system.print_statement(statement_input)
+            print(result)
+            print("\nIs there anything else you'd like to do?")
+            
+        elif choice == "Q":
+            print("Thank you for banking with AwesomeGIC Bank")
+            print("Have a nice day!")
+            break
+            
+        else:
+            print("Invalid option. Please try again.")
+            print()
+
+if __name__ == "__main__":
+    main()
+
 
 
         
