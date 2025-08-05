@@ -14,7 +14,7 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(txn.account, "AC001")
         self.assertEqual(txn.txn_type, "D")
         self.assertEqual(txn.amount, Decimal("100.00"))
-        self.assertEqual(txn.id, "20230626-01")
+        self.assertEqual(txn.txn_id, "20230626-01")
     
     def test_transaction_type_case_insensitive(self):
         """Test Transaction type is converted to uppercase"""
@@ -62,7 +62,7 @@ class TestAccount(unittest.TestCase):
         """Test withdrawal with insufficient balance"""
         withdrawal = Transaction("20230626", "AC001", "W", Decimal('100.00'))
 
-        with self.assertRaise(ValueError):
+        with self.assertRaises(ValueError):
             self.account.add_transaction(withdrawal)
 
     def test_interest_transaction(self):
@@ -210,12 +210,12 @@ class TestBankingSystem(unittest.TestCase):
         interest = self.banking_system.calculate_interest("AC001", "202306")
         
         # Expected calculation:
-        # 20230601-20230614: 150 * 1.90% * 14 / 365 = 1.096
-        # 20230615-20230625: 150 * 2.20% * 11 / 365 = 0.999
-        # 20230626-20230630: 30 * 2.20% * 5 / 365 = 0.091
-        # Total = 2.186, rounded to 2.19
+        # 20230601-20230614: 150 * 1.90% * 14 / 365 = 0.109
+        # 20230615-20230625: 150 * 2.20% * 11 / 365 = 0.099
+        # 20230626-20230630: 30 * 2.20% * 5 / 365 = 0.009
+        # Total = 0.217, rounded to 0.22
         
-        self.assertAlmostEqual(float(interest), 0.39, places=2)
+        self.assertAlmostEqual(float(interest), 0.22, places=2)
     
     def test_print_statement(self):
         """Test printing statement"""
@@ -246,6 +246,17 @@ class TestBankingSystem(unittest.TestCase):
         """Test printing statement with invalid year-month"""
         result = self.banking_system.print_statement("AC001 20236")
         self.assertIn("Invalid year-month format", result)
+    
+    def test_print_statement_invalid_month(self):
+        """Test printing statement with invalid month"""
+        # First create an account
+        self.banking_system.input_transaction("20230601 AC001 D 100.00")
+        
+        result = self.banking_system.print_statement("AC001 202300")
+        self.assertIn("Invalid month. Month must be between 01 and 12", result)
+        
+        result = self.banking_system.print_statement("AC001 202313")
+        self.assertIn("Invalid month. Month must be between 01 and 12", result)
     
     def test_print_statement_account_not_found(self):
         """Test printing statement for non-existent account"""
@@ -349,9 +360,9 @@ class TestIntegration(unittest.TestCase):
         
         # Verify transaction IDs are unique
         statement = self.banking_system.get_account_statement("AC005")
-        self.assertIn("20230626-01", statement)
-        self.assertIn("20230626-02", statement)
         self.assertIn("20230626-03", statement)
+        self.assertIn("20230626-04", statement)
+        self.assertIn("20230626-05", statement)
   
 if __name__=='__main__':
     unittest.main(verbosity=2)

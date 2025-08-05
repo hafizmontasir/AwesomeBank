@@ -234,6 +234,9 @@ class BankingSystem:
         
         year = int(year_month[:4])
         month = int(year_month[4:])
+        
+        if month < 1 or month > 12:
+            return "Invalid month. Month must be between 01 and 12"
 
         acc = self.accounts[account]
         month_transactions = []
