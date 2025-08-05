@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 AwesomeGIC Bank - Simple Banking System
 """
@@ -10,7 +9,7 @@ import re
 
 class Transaction:
     """Represent a bank transaction"""
-
+    
     def __init__(self, date: str, account: str, txn_type: str, amount: Decimal, txn_id: str =""):
         self.date = date
         self.account = account
@@ -22,15 +21,6 @@ class Transaction:
         txn_id_display = self.txn_id if self.txn_id else ""
         return f"| {self.date} | {txn_id_display:11} | {self.txn_type:2} | {self.amount:7.2f} |"
 
-##################################### Test Class Transaction ####################################################
-
-# deposit = Transaction("20230601", "AC001", "D", Decimal("100.00"), "20230601-01")
-# withdrawal = Transaction("20230615", "AC001", "w", Decimal("50.00"), "20230615-01")
-
-# print(deposit)
-# print(withdrawal)
-
-################################################## end ########################################################
 
 class InterestRule:
     """Represent an interest rule"""
@@ -43,18 +33,9 @@ class InterestRule:
     def __str__(self):
         return f"| {self.date} | {self.rule_id:6} | {self.rate:8.2f} |"
 
-######################################### Example usage of class InterestRule ################################################
-# rule1 = InterestRule("20230101", "RULE01", Decimal("1.95"))
-# rule2 = InterestRule("20230615", "SUMMER", Decimal("2.20"))
-
-# print(rule1)
-# print(rule2)
-
-################################################ end ##################################################
 
 class Account:
     """Rpresent an bank account"""
-    
     def __init__(self, account_id: str):
         self.account_id = account_id
         self.transactions: List[Transaction] = []
@@ -81,22 +62,10 @@ class Account:
                 else:
                     balance += transaction.amount
         return balance
-    
-####################################### Example usage of class Account ####################################
-# account = Account("AC001")
 
-# account.add_transaction(Transaction("20230101", "AC001", "D", Decimal("100.00")))
-# account.add_transaction(Transaction("20230115", "AC001", "W", Decimal("50.00")))
-
-# print(account.balance)
-
-# print(account.get_balance_at_date("20230110"))
-
-################################################ end ##################################################
 
 class BankingSystem:
     """main banking system class"""
-
     def __init__(self):
         self.accounts: Dict[str, Account] = {}
         self.interest_rules: List[InterestRule] = []
@@ -174,7 +143,6 @@ class BankingSystem:
         
         if not self.validate_date(date):
             return "Invalid date format. Use YYYYMMDD"
-
         try:
             rate = Decimal(rate_str)
             if rate <= 0 or rate >= 100:
@@ -198,13 +166,12 @@ class BankingSystem:
         acc = self.accounts[account]
         result = [f"Account: {account}"]
         result.append("| Date     | Txn Id      |Type| Amount  |")
-
+        
         for transaction in acc.transactions:
             result.append(str(transaction))
-        
+
         return "\n".join(result)
     
-
     def get_interest_rules_display(self) -> str:
         """Get formatted interest rules display"""
         result = ["Interest rules:"]
@@ -311,7 +278,7 @@ class BankingSystem:
             self.accounts[account].add_transaction (interest_txn)
         
         return "\n".join(result)
-                    
+
 def main():
     """Main application loop"""
     banking_system = BankingSystem()
@@ -367,50 +334,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-        
-        
-        
-
-####################################### Example usage of class Banking System ####################################
-bank = BankingSystem()
-
-# print(bank.validate_date('291011232'))
-# print(bank.validate_date('9101123'))
-# print(bank.validate_date('20241018'))
-# print(bank.validate_date('20240230'))
-
-
-# print(bank.validate_amount(100.00))
-# print(bank.validate_amount(100))
-# print(bank.validate_amount(-67.22))
-# print(bank.validate_amount(67.123))
-# print(bank.define_interest_rule("20230101 RULE01 1.95"))
-
-# bank.input_transaction("20230101 AC001 D 100.00")
-# bank.input_transaction("20230115 AC001 W 50.00")
-# bank.input_transaction("20230120 AC001 W 50.00")
-
-# print(bank.get_account_statement("AC001"))
-# print(bank.get_account_statement("AC999"))
-
-# bank.define_interest_rule("20230101 RULE01 1.50")
-# bank.define_interest_rule("20230615 RULE02 2.00")
-
-# interest = bank.calculate_interest("AC001", "202306")
-# print(f"Interest earned in June 2023: ${interest:.2f}")
-
-
-bank.input_transaction("20230515 AC001 D 1000.00")  
-bank.input_transaction("20230601 AC001 D 500.00")
-bank.input_transaction("20230615 AC001 W 200.00")   
-bank.input_transaction("20230620 AC001 D 300.00")
-
-bank.define_interest_rule("20230101 RULE01 1.50")
-bank.define_interest_rule("20230615 RULE02 2.00")
-
-print(bank.print_statement("AC001 202306"))
-# print(bank.get_interest_rules_display())
-################################################ end ##################################################
