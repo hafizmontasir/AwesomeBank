@@ -249,6 +249,69 @@ class BankingSystem:
             current_date += timedelta(days=1)
 
         return total_interest.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    
+    def print_statement(self, input_line: str) ->str:
+        """Generate and print account statement with interest"""
+        parts = input_line.strip().split()
+        if len(parts) != 2:
+            return "Invalid format. Expected: <Account> <Year><Month>"
+
+        account, year_month = parts
+        
+        if len(year_month) != 6 or not year_month.isdigit():
+            return "Invalid year-month format. Use YYYYMM"
+        
+        if account not in self.accounts:
+            return f"Account {account} not found"
+        
+        year = int(year_month[:4])
+        month = int(year_month[4:])
+
+        acc = self.accounts[account]
+        month_transactions = []
+        running_balance = Decimal('0')
+
+        for transaction in acc.transactions:
+            if transaction.date < f"{year:04d}{month:02d}01":
+                if transaction.txn_type == 'W':
+                    running_balance -= transaction.amount
+                else:
+                    running_balance += transaction.amount
+        
+        for transaction in acc.transactions:
+            if transaction.date.startswith(year_month):
+                if transaction.txn_type == 'W':
+                    running_balance -= transaction.amount
+                else:
+                    running_balance += transaction.amount
+                month_transactions.append((transaction, running_balance))
+
+        interest = self.calculate_interest(account, year_month)
+
+        result = [f"Account: {account}"]
+        result.append("| Date     | Txn Id      | Type | Amount  | Balance  |")
+
+        for transaction, balance in month_transactions:
+            txn_id_display = transaction.txn_id if transaction.txn_id else " " * 11
+            result.append(f"| {transaction.date} | {txn_id_display:11} | {transaction.txn_type:4} | {transaction.amount:7.2f} | {balance:8.2f} |")
+
+        if interest > 0:
+            final_balance = running_balance + interest
+            last_day = datetime(year, month, 1)
+            if month == 12:
+                last_day = datetime(year +1, 1, 1) - timedelta(days=1)
+            else:
+                last_day = datetime(year, month + 1, 1) - timedelta(days=1)
+            
+            last_day_str = last_day.strftime('%Y%m%d')
+            result.append(f"| {last_day_str} | {' ':11} | I    | {interest:7.2f} | {final_balance:8.2f} |")
+
+            interest_txn = Transaction(last_day_str, account, "I", interest)
+            self.accounts[account].add_transaction (interest_txn)
+        
+        return "\n".join(result)
+                    
+                    
 
 
         
@@ -270,18 +333,28 @@ bank = BankingSystem()
 # print(bank.validate_amount(67.123))
 # print(bank.define_interest_rule("20230101 RULE01 1.95"))
 
-bank.input_transaction("20230101 AC001 D 100.00")
-bank.input_transaction("20230115 AC001 W 50.00")
-bank.input_transaction("20230120 AC001 W 50.00")
+# bank.input_transaction("20230101 AC001 D 100.00")
+# bank.input_transaction("20230115 AC001 W 50.00")
+# bank.input_transaction("20230120 AC001 W 50.00")
 
 # print(bank.get_account_statement("AC001"))
 # print(bank.get_account_statement("AC999"))
 
+# bank.define_interest_rule("20230101 RULE01 1.50")
+# bank.define_interest_rule("20230615 RULE02 2.00")
+
+# interest = bank.calculate_interest("AC001", "202306")
+# print(f"Interest earned in June 2023: ${interest:.2f}")
+
+
+bank.input_transaction("20230515 AC001 D 1000.00")  
+bank.input_transaction("20230601 AC001 D 500.00")
+bank.input_transaction("20230615 AC001 W 200.00")   
+bank.input_transaction("20230620 AC001 D 300.00")
+
 bank.define_interest_rule("20230101 RULE01 1.50")
 bank.define_interest_rule("20230615 RULE02 2.00")
 
-interest = bank.calculate_interest("AC001", "202306")
-print(f"Interest earned in June 2023: ${interest:.2f}")
-
+print(bank.print_statement("AC001 202306"))
 # print(bank.get_interest_rules_display())
 ################################################ end ##################################################
